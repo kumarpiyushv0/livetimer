@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>World Clock</title>
+  <title>Enhanced World Clock</title>
   <style>
     /* General Reset */
     body, html {
@@ -14,7 +14,7 @@
       justify-content: center;
       align-items: center;
       font-family: 'Arial', sans-serif;
-      background: linear-gradient(120deg, #6a11cb, #2575fc);
+      background: linear-gradient(120deg, #1e3c72, #2a5298);
       color: white;
     }
 
@@ -46,45 +46,72 @@
 </head>
 <body>
   <div class="clock-container">
-    <div class="clock-title">Om Dwivedi Chutiya hai</div>
     <div class="clock-title">Your Local Time:</div>
     <div id="clock" class="clock-time">Loading...</div>
     <div id="error" class="error-message"></div>
   </div>
 
   <script>
-    // Function to fetch and update the local time
-    async function fetchTime() {
+    /**
+     * Fetch the time using the World Time API with retries.
+     */
+    async function fetchTimeWithRetries(retries = 3) {
       const clockElement = document.getElementById('clock');
       const errorElement = document.getElementById('error');
+      const apiURL = 'https://worldtimeapi.org/api/ip';
 
-      try {
-        const response = await fetch('https://worldtimeapi.org/api/ip');
-        if (!response.ok) throw new Error('Failed to fetch time');
+      while (retries > 0) {
+        try {
+          const response = await fetch(apiURL);
+          if (!response.ok) throw new Error(`API error: ${response.status}`);
 
-        const data = await response.json();
-        const timeString = new Date(data.datetime).toLocaleTimeString([], {
+          const data = await response.json();
+          const timeString = new Date(data.datetime).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+          });
+
+          clockElement.textContent = timeString;
+          errorElement.textContent = '';
+          return;
+        } catch (error) {
+          console.error('Error fetching time:', error);
+          retries -= 1;
+          if (retries === 0) {
+            clockElement.textContent = new Date().toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: true,
+            });
+            errorElement.textContent = 'Unable to fetch time from the server. Fallback time shown.';
+          }
+        }
+      }
+    }
+
+    /**
+     * Initialize the clock with automatic updates every second.
+     */
+    function initializeClock() {
+      fetchTimeWithRetries();
+
+      // Update the time every second using local clock as fallback
+      setInterval(() => {
+        const clockElement = document.getElementById('clock');
+        clockElement.textContent = new Date().toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',
           second: '2-digit',
           hour12: true,
         });
-
-        clockElement.textContent = timeString;
-        errorElement.textContent = '';
-
-        // Update the clock every second
-        setTimeout(fetchTime, 1000);
-      } catch (error) {
-        clockElement.textContent = '---';
-        errorElement.textContent = 'Unable to fetch the current time.';
-        console.error('Error fetching time:', error);
-      }
+      }, 1000);
     }
 
-    // Start fetching time
-    fetchTime();
+    // Start the clock
+    initializeClock();
   </script>
 </body>
 </html>
-
