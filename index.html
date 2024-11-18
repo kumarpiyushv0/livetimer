@@ -84,7 +84,7 @@
 
     .weather {
       margin-top: 30px;
-      font-size: 2em;
+      font-size: 1.5em;
       font-weight: 600;
     }
 
@@ -92,6 +92,13 @@
       color: #ff6f61;
       font-size: 1.2em;
       margin-top: 15px;
+    }
+
+    .details {
+      margin-top: 20px;
+      font-size: 1em;
+      font-weight: 400;
+      line-height: 1.6;
     }
 
     /* Footer Styles */
@@ -111,6 +118,7 @@
     <div class="clock-title">Your Local Time:</div>
     <div id="clock" class="clock-time">Loading...</div>
     <div id="weather" class="weather">Fetching weather...</div>
+    <div id="details" class="details"></div>
     <div id="error" class="error-message"></div>
   </div>
 
@@ -127,27 +135,27 @@
       const body = document.body;
       const audioElement = document.getElementById('weather-audio');
 
-      // Remove all existing classes and stop current audio
       body.className = '';
       audioElement.pause();
       audioElement.src = '';
 
-      // Apply class and audio based on the weather condition
-      if (weatherCondition.includes('cloud')) {
+      if (weatherCondition.includes('smoke') || weatherCondition.includes('haze')) {
         body.classList.add('cloudy');
-        audioElement.src = 'breeze.mp3'; // Breeze sound
+        audioElement.src = 'wind.mp3';
+      } else if (weatherCondition.includes('cloud')) {
+        body.classList.add('cloudy');
+        audioElement.src = 'breeze.mp3';
       } else if (weatherCondition.includes('rain')) {
         body.classList.add('rainy');
-        audioElement.src = 'rain.mp3'; // Rain sound
+        audioElement.src = 'rain.mp3';
       } else if (weatherCondition.includes('clear')) {
         body.classList.add('clear');
-        audioElement.src = 'birds.mp3'; // Birds chirping
+        audioElement.src = 'birds.mp3';
       } else {
         body.classList.add('sunny');
-        audioElement.src = 'birds.mp3'; // Default sunny weather sound
+        audioElement.src = 'birds.mp3';
       }
 
-      // Play sound if a valid source is set
       if (audioElement.src) {
         audioElement.play().catch(err => console.error('Audio play error:', err));
       }
@@ -193,6 +201,7 @@
     /** Fetch weather information using OpenWeather API */
     async function fetchWeather() {
       const weatherElement = document.getElementById('weather');
+      const detailsElement = document.getElementById('details');
       const errorElement = document.getElementById('error');
 
       try {
@@ -201,16 +210,34 @@
         navigator.geolocation.getCurrentPosition(async (position) => {
           const { latitude, longitude } = position.coords;
           const weatherURL = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${OPENWEATHER_API_KEY}`;
+          const airQualityURL = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHER_API_KEY}`;
 
-          const response = await fetch(weatherURL);
-          if (!response.ok) throw new Error('Weather API error');
+          const [weatherResponse, airQualityResponse] = await Promise.all([
+            fetch(weatherURL),
+            fetch(airQualityURL)
+          ]);
 
-          const data = await response.json();
-          const { main, weather, name } = data;
+          if (!weatherResponse.ok || !airQualityResponse.ok) throw new Error('API error');
+
+          const weatherData = await weatherResponse.json();
+          const airQualityData = await airQualityResponse.json();
+
+          const { main, weather, name, wind, visibility } = weatherData;
           const description = weather[0].description;
           const temperature = main.temp;
+          const humidity = main.humidity;
+          const windSpeed = wind.speed;
+
+          const aqi = airQualityData.list[0].main.aqi;
 
           weatherElement.textContent = `Weather in ${name}: ${description}, ${temperature}°C`;
+          detailsElement.innerHTML = `
+            <p>Humidity: ${humidity}%</p>
+            <p>Wind Speed: ${windSpeed} m/s</p>
+            <p>Visibility: ${visibility / 1000} km</p>
+            <p>Air Quality Index (AQI): ${aqi}</p>
+          `;
+
           updateBackgroundAndSound(description.toLowerCase());
         }, (geolocationError) => {
           weatherElement.textContent = 'Unable to get location.';
@@ -227,7 +254,6 @@
       fetchTimeWithRetries();
       fetchWeather();
 
-      // Update the time every second using local clock as fallback
       setInterval(() => {
         const clockElement = document.getElementById('clock');
         clockElement.textContent = new Date().toLocaleTimeString([], {
@@ -239,7 +265,6 @@
       }, 1000);
     }
 
-    // Start fetching time and weather
     initializePage();
   </script>
 </body>
