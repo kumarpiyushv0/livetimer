@@ -4,7 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Live Clock</title>
+  <title>World Clock and Weather with AQI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
     /* General Reset */
     body, html {
@@ -40,6 +41,22 @@
       font-weight: bold;
       color: #FFD700; /* Golden color to make it stand out */
       letter-spacing: 1px;
+    }
+
+    .navbar .social-icons {
+      float:right;
+      
+    }
+
+    .navbar .social-icons a {
+      color: #FFD700;
+      font-size: 1.5em;
+      margin-left: 15px;
+      transition: color 0.3s ease;
+    }
+
+    .navbar .social-icons a:hover {
+      color: #fff;
     }
 
     /* Animated Background */
@@ -137,6 +154,11 @@
   <!-- Navbar -->
   <div class="navbar">
     <div class="navbar-left">Live Clock</div>
+    <div class="social-icons">
+        <a href="https://x.com/impk1103" target="_blank" title="Twitter"><i class="fab fa-twitter"></i></a>
+        <a href="https://www.instagram.com/pi_yus0/" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="https://www.linkedin.com/in/piyush-kumar-3b8a222b8/" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+      </div>
   </div>
 
   <canvas id="background"></canvas>
@@ -146,6 +168,7 @@
     <div id="weather" class="weather">Fetching weather...</div>
     <div id="details" class="details"></div>
     <div id="aqi" class="details">AQI: Loading...</div>
+    <div id="location" class="details">Location: Fetching...</div>
     <div id="error" class="error-message"></div>
   </div>
   <div class="footer">© Made by Piyush Kumar</div>
@@ -267,6 +290,7 @@
       const detailsElement = document.getElementById('details');
       const aqiElement = document.getElementById('aqi');
       const errorElement = document.getElementById('error');
+      const locationElement = document.getElementById('location');
 
       try {
         if (!navigator.geolocation) throw new Error('Geolocation is not supported.');
@@ -288,39 +312,30 @@
           const main = weatherData.main;
           const aqi = aqiData.list[0].main.aqi;
 
+          // Display city name
+          locationElement.textContent = `Location: ${weatherData.name}`;
+
           weatherElement.textContent = `${description}, ${main.temp}°C`;
           detailsElement.textContent = `Feels like: ${main.feels_like}°C, Humidity: ${main.humidity}%`;
-          aqiElement.textContent = `AQI: ${['Good', 'Fair', 'Moderate', 'Poor', 'Very Poor'][aqi - 1]}`;
+          aqiElement.textContent = `AQI: ${aqi}`;
 
-          currentWeather = description.includes('rain') ? 'rainy' : description.includes('cloud') ? 'cloudy' : 'clear';
-          initializeParticles(currentWeather);
+          initializeParticles(description);
         });
       } catch (error) {
-        weatherElement.textContent = 'Unable to fetch weather.';
-        errorElement.textContent = error.message;
+        console.error(error);
+        errorElement.textContent = 'Error fetching weather data!';
       }
     }
 
-    function fetchTime() {
+    function updateClock() {
       const clockElement = document.getElementById('clock');
-      setInterval(() => {
-        const now = new Date();
-        clockElement.textContent = now.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: true,
-        });
-      }, 1000);
+      const date = new Date();
+      clockElement.textContent = date.toLocaleTimeString();
     }
 
-    function initialize() {
-      fetchTime();
-      fetchWeather();
-      animate();
-    }
-
-    initialize();
+    setInterval(updateClock, 1000);
+    fetchWeather();
+    animate();
   </script>
 </body>
 
