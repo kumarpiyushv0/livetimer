@@ -23,43 +23,40 @@
     /* Dynamic Background */
     body.sunny {
       background: linear-gradient(120deg, #ffdd00, #ff7e00);
-      animation: sunnyAnimation 8s infinite alternate;
     }
 
     body.cloudy {
       background: linear-gradient(120deg, #b0c4de, #708090);
-      animation: cloudyAnimation 8s infinite alternate;
     }
 
     body.rainy {
       background: linear-gradient(120deg, #1e3c72, #2a5298);
-      animation: rainyAnimation 8s infinite alternate;
     }
 
     body.clear {
       background: linear-gradient(120deg, #87ceeb, #4682b4);
-      animation: clearAnimation 8s infinite alternate;
     }
 
-    /* Animation Keyframes */
-    @keyframes sunnyAnimation {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 100% 50%; }
+    /* Time of Day Icons */
+    .time-icon {
+      font-size: 3em;
+      margin: 10px 0;
     }
 
-    @keyframes cloudyAnimation {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 100% 50%; }
+    .icon-day {
+      color: #ffdd00;
     }
 
-    @keyframes rainyAnimation {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 100% 50%; }
+    .icon-afternoon {
+      color: #ff8800;
     }
 
-    @keyframes clearAnimation {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 100% 50%; }
+    .icon-evening {
+      color: #c44e00;
+    }
+
+    .icon-night {
+      color: #1c1c4c;
     }
 
     /* Container Styles */
@@ -73,7 +70,7 @@
 
     .clock-title {
       font-size: 2.5em;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       font-weight: bold;
     }
 
@@ -83,22 +80,22 @@
     }
 
     .weather {
-      margin-top: 30px;
+      margin-top: 20px;
       font-size: 1.5em;
       font-weight: 600;
+    }
+
+    .details {
+      margin-top: 15px;
+      font-size: 1em;
+      font-weight: 400;
+      line-height: 1.6;
     }
 
     .error-message {
       color: #ff6f61;
       font-size: 1.2em;
       margin-top: 15px;
-    }
-
-    .details {
-      margin-top: 20px;
-      font-size: 1em;
-      font-weight: 400;
-      line-height: 1.6;
     }
 
     /* Footer Styles */
@@ -116,6 +113,7 @@
 <body>
   <div class="container">
     <div class="clock-title">Your Local Time:</div>
+    <div id="time-icon" class="time-icon">☀️</div>
     <div id="clock" class="clock-time">Loading...</div>
     <div id="weather" class="weather">Fetching weather...</div>
     <div id="details" class="details"></div>
@@ -130,34 +128,22 @@
   <script>
     const OPENWEATHER_API_KEY = 'db0c121614356f4aa6a99b992d44ff18'; // Replace with your OpenWeather API key
 
-    /** Update background and play sounds based on weather conditions */
-    function updateBackgroundAndSound(weatherCondition) {
-      const body = document.body;
-      const audioElement = document.getElementById('weather-audio');
+    /** Update the icon based on the current hour */
+    function updateTimeIcon(hour) {
+      const iconElement = document.getElementById('time-icon');
 
-      body.className = '';
-      audioElement.pause();
-      audioElement.src = '';
-
-      if (weatherCondition.includes('smoke') || weatherCondition.includes('haze')) {
-        body.classList.add('cloudy');
-        audioElement.src = 'wind.mp3';
-      } else if (weatherCondition.includes('cloud')) {
-        body.classList.add('cloudy');
-        audioElement.src = 'breeze.mp3';
-      } else if (weatherCondition.includes('rain')) {
-        body.classList.add('rainy');
-        audioElement.src = 'rain.mp3';
-      } else if (weatherCondition.includes('clear')) {
-        body.classList.add('clear');
-        audioElement.src = 'birds.mp3';
+      if (hour >= 5 && hour < 12) {
+        iconElement.textContent = '☀️'; // Morning
+        iconElement.className = 'time-icon icon-day';
+      } else if (hour >= 12 && hour < 17) {
+        iconElement.textContent = '🌞'; // Afternoon
+        iconElement.className = 'time-icon icon-afternoon';
+      } else if (hour >= 17 && hour < 20) {
+        iconElement.textContent = '🌇'; // Evening
+        iconElement.className = 'time-icon icon-evening';
       } else {
-        body.classList.add('sunny');
-        audioElement.src = 'birds.mp3';
-      }
-
-      if (audioElement.src) {
-        audioElement.play().catch(err => console.error('Audio play error:', err));
+        iconElement.textContent = '🌙'; // Night
+        iconElement.className = 'time-icon icon-night';
       }
     }
 
@@ -173,7 +159,8 @@
           if (!response.ok) throw new Error(`API error: ${response.status}`);
 
           const data = await response.json();
-          const timeString = new Date(data.datetime).toLocaleTimeString([], {
+          const dateTime = new Date(data.datetime);
+          const timeString = dateTime.toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit',
@@ -182,17 +169,21 @@
 
           clockElement.textContent = timeString;
           errorElement.textContent = '';
+
+          updateTimeIcon(dateTime.getHours()); // Update the time icon
           return;
         } catch (error) {
           console.error('Error fetching time:', error);
           retries -= 1;
           if (retries === 0) {
-            clockElement.textContent = new Date().toLocaleTimeString([], {
+            const now = new Date();
+            clockElement.textContent = now.toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
               second: '2-digit',
               hour12: true,
             });
+            updateTimeIcon(now.getHours());
           }
         }
       }
@@ -255,13 +246,15 @@
       fetchWeather();
 
       setInterval(() => {
+        const now = new Date();
         const clockElement = document.getElementById('clock');
-        clockElement.textContent = new Date().toLocaleTimeString([], {
+        clockElement.textContent = now.toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',
           second: '2-digit',
           hour12: true,
         });
+        updateTimeIcon(now.getHours());
       }, 1000);
     }
 
