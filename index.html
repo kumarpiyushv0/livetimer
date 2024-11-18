@@ -324,7 +324,7 @@
                     locationElement.textContent = `Location: ${weatherData.name}`;
                     weatherElement.textContent = `${description.charAt(0).toUpperCase() + description.slice(1)}, ${main.temp}°C`;
                     detailsElement.textContent = `Feels like: ${main.feels_like}°C, Humidity: ${main.humidity}%`;
-                    aqiStatusElement.textContent = `AQI: ${aqiStatus.text}`;
+                    detailsElement.textContent = `Air Quality: `; aqiStatusElement.textContent = `${aqiStatus.text}`;
                     aqiStatusElement.style.color = aqiStatus.color;
 
                     initializeParticles(description.includes('rain') ? 'rainy' : (description.includes('cloud') ? 'cloudy' : 'clear'));
