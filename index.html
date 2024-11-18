@@ -3,100 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cool Animation with World Clock</title>
+  <title>World Clock</title>
   <style>
     /* General Reset */
     body, html {
       margin: 0;
       padding: 0;
       height: 100%;
-      font-family: 'Arial', sans-serif;
-      overflow: hidden;
-    }
-
-    /* Gradient Background Animation */
-    body {
-      background: linear-gradient(45deg, #ff6f61, #6f61ff, #61ff87);
-      background-size: 400% 400%;
-      animation: gradientMove 10s infinite;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-    }
-
-    @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    /* Animated Text */
-    .text {
-      font-size: 3em;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(120deg, #6a11cb, #2575fc);
       color: white;
-      text-transform: uppercase;
+    }
+
+    /* Clock Styles */
+    .clock-container {
       text-align: center;
-      animation: rotateText 5s infinite;
-    }
-
-    @keyframes rotateText {
-      0%, 100% { transform: rotate(0); }
-      50% { transform: rotate(10deg); }
-    }
-
-    /* World Clock Display */
-    .clock {
-      margin-top: 20px;
-      font-size: 1.5em;
-      color: white;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 10px 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    }
-
-    /* Pulsating Button */
-    .button-container {
-      margin-top: 20px;
-      text-align: center;
-    }
-
-    .button {
-      font-size: 1.2em;
-      padding: 15px 30px;
-      border: none;
-      border-radius: 30px;
-      color: white;
       background: rgba(0, 0, 0, 0.5);
-      cursor: pointer;
-      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-      animation: pulse 2s infinite;
+      padding: 20px 40px;
+      border-radius: 15px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
 
-    .button:hover {
-      background: rgba(255, 255, 255, 0.5);
+    .clock-title {
+      font-size: 1.8em;
+      margin-bottom: 10px;
     }
 
-    @keyframes pulse {
-      0% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.8); }
-      50% { box-shadow: 0 0 30px rgba(255, 255, 255, 0.8); }
-      100% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.8); }
+    .clock-time {
+      font-size: 2.5em;
+      font-weight: bold;
+    }
+
+    .error-message {
+      color: #ff6f61;
+      font-size: 1em;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="text">Cool Animated Page</div>
-  <div class="clock" id="clock">Loading your time...</div>
-  <div class="button-container">
-    <button class="button">Click Me</button>
+  <div class="clock-container">
+    <div class="clock-title">Your Local Time:</div>
+    <div id="clock" class="clock-time">Loading...</div>
+    <div id="error" class="error-message"></div>
   </div>
 
   <script>
-    // Function to fetch time from World Time API
+    // Function to fetch and update the local time
     async function fetchTime() {
+      const clockElement = document.getElementById('clock');
+      const errorElement = document.getElementById('error');
+
       try {
         const response = await fetch('https://worldtimeapi.org/api/ip');
+        if (!response.ok) throw new Error('Failed to fetch time');
+
         const data = await response.json();
         const timeString = new Date(data.datetime).toLocaleTimeString([], {
           hour: '2-digit',
@@ -105,19 +69,19 @@
           hour12: true,
         });
 
-        const clockElement = document.getElementById('clock');
-        clockElement.textContent = `Your Local Time: ${timeString}`;
+        clockElement.textContent = timeString;
+        errorElement.textContent = '';
 
-        // Update time every second
+        // Update the clock every second
         setTimeout(fetchTime, 1000);
       } catch (error) {
-        const clockElement = document.getElementById('clock');
-        clockElement.textContent = "Unable to fetch time.";
+        clockElement.textContent = '---';
+        errorElement.textContent = 'Unable to fetch the current time.';
         console.error('Error fetching time:', error);
       }
     }
 
-    // Start fetching the time
+    // Start fetching time
     fetchTime();
   </script>
 </body>
