@@ -1,342 +1,355 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>World Clock and Weather with AQI</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <style>
-    /* General Reset */
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-      font-family: 'Arial', sans-serif;
-      color: white;
-      text-align: center;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    /* Navbar Styling */
-    .navbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 40px;
-      background: rgba(0, 0, 0, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      z-index: 2;
-    }
-
-    .navbar .navbar-left {
-      font-size: 1.2em;
-      font-weight: bold;
-      color: #FFD700; /* Golden color to make it stand out */
-      letter-spacing: 1px;
-    }
-
-    .navbar .social-icons {
-      float:right;
-      
-    }
-
-    .navbar .social-icons a {
-      color: #FFD700;
-      font-size: 1.5em;
-      margin-left: 15px;
-      transition: color 0.3s ease;
-    }
-
-    .navbar .social-icons a:hover {
-      color: #fff;
-    }
-
-    /* Animated Background */
-    #background {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-    }
-
-    /* Container Styling */
-    .container {
-      z-index: 1;
-      text-align: center;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 20px 40px;
-      border-radius: 15px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-      width: 80%;
-      max-width: 400px;
-      margin: auto;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      transition: transform 1s ease-in-out;
-    }
-
-    .clock-title {
-      font-size: 2em;
-      margin-bottom: 10px;
-      font-weight: bold;
-    }
-
-    .clock-time {
-      font-size: 3em;
-      font-weight: bold;
-    }
-
-    .weather {
-      margin-top: 20px;
-      font-size: 1.2em;
-      font-weight: 600;
-    }
-
-    .details {
-      margin-top: 10px;
-      font-size: 1em;
-      font-weight: 400;
-      line-height: 1.6;
-    }
-
-    .error-message {
-      color: #ff6f61;
-      font-size: 1.2em;
-      margin-top: 15px;
-    }
-
-    /* Background Animations for Different Weather */
-    @keyframes sunnyGradient {
-      0%, 100% { background: linear-gradient(120deg, #FFD700, #FFA500, #FF6347); }
-      50% { background: linear-gradient(120deg, #FFDD44, #FFA500, #FF4500); }
-    }
-
-    @keyframes cloudyGradient {
-      0%, 100% { background: linear-gradient(120deg, #b0c4de, #708090, #6a7a8a); }
-      50% { background: linear-gradient(120deg, #c0d4ee, #708090, #8a9aa0); }
-    }
-
-    @keyframes rainGradient {
-      0%, 100% { background: linear-gradient(120deg, #1e3c72, #2a5298, #1c5270); }
-      50% { background: linear-gradient(120deg, #1e3c72, #2a5298, #4a7298); }
-    }
-
-    /* Apply Animation Based on Weather */
-    body.sunny { animation: sunnyGradient 6s infinite alternate ease-in-out; }
-    body.cloudy { animation: cloudyGradient 8s infinite alternate ease-in-out; }
-    body.rainy { animation: rainGradient 10s infinite alternate ease-in-out; }
-
-    /* Footer */
-    .footer {
-      position: absolute;
-      bottom: 10px;
-      right: 20px;
-      font-size: 1em;
-      color: white;
-      font-weight: bold;
-    }
-  </style>
-</head>
-
-<body>
-  <!-- Navbar -->
-  <div class="navbar">
-    <div class="navbar-left">Live Clock</div>
-    <div class="social-icons">
-        <a href="https://x.com/impk1103" target="_blank" title="Twitter"><i class="fab fa-twitter"></i></a>
-        <a href="https://www.instagram.com/pi_yus0/" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
-        <a href="https://www.linkedin.com/in/piyush-kumar-3b8a222b8/" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
-      </div>
-  </div>
-
-  <canvas id="background"></canvas>
-  <div class="container">
-    <div class="clock-title">Local Time:</div>
-    <div id="clock" class="clock-time">Loading...</div>
-    <div id="weather" class="weather">Fetching weather...</div>
-    <div id="details" class="details"></div>
-    <div id="aqi" class="details">AQI: Loading...</div>
-    <div id="location" class="details">Location: Fetching...</div>
-    <div id="error" class="error-message"></div>
-  </div>
-  <div class="footer">© Made by Piyush Kumar</div>
-
-  <script>
-    const OPENWEATHER_API_KEY = 'db0c121614356f4aa6a99b992d44ff18'; // Replace with your OpenWeather API key
-    const canvas = document.getElementById('background');
-    const ctx = canvas.getContext('2d');
-    let particles = [];
-    let currentWeather = 'clear';
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    class Particle {
-      constructor(x, y, vx, vy, size, color, shape) {
-        this.x = x;
-        this.y = y;
-        this.vx = vx;
-        this.vy = vy;
-        this.size = size;
-        this.color = color;
-        this.shape = shape;
-      }
-
-      draw() {
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        if (this.shape === 'circle') {
-          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        } else if (this.shape === 'square') {
-          ctx.rect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
-        } else if (this.shape === 'triangle') {
-          ctx.moveTo(this.x, this.y - this.size);
-          ctx.lineTo(this.x - this.size, this.y + this.size);
-          ctx.lineTo(this.x + this.size, this.y + this.size);
-          ctx.closePath();
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Weather & Time Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        ctx.fill();
-      }
 
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
+        body, html {
+            height: 100%;
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
 
-        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-        if (this.y > canvas.height) this.y = 0;
-      }
-    }
+        /* Navbar Styling */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 10;
+        }
 
-    function initializeParticles(weather) {
-      particles = [];
-      let count, color, vx, vy, size, shapes;
-      document.body.className = '';
+        .navbar-left {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #FFD700;
+            letter-spacing: 1px;
+        }
 
-      switch (weather) {
-        case 'clear':
-          document.body.classList.add('sunny');
-          count = 50;
-          color = '#FFD700';
-          vx = 0.5;
-          vy = 0.5;
-          size = 2;
-          shapes = ['circle', 'triangle'];
-          break;
-        case 'cloudy':
-          document.body.classList.add('cloudy');
-          count = 100;
-          color = '#B0C4DE';
-          vx = 0.2;
-          vy = 0.2;
-          size = 3;
-          shapes = ['circle', 'square'];
-          break;
-        case 'rainy':
-          document.body.classList.add('rainy');
-          count = 150;
-          color = '#87CEEB';
-          vx = 0;
-          vy = 2;
-          size = 1;
-          shapes = ['circle'];
-          break;
-        default:
-          document.body.classList.add('sunny');
-          count = 50;
-          color = '#FFD700';
-          vx = 0.5;
-          vy = 0.5;
-          size = 2;
-          shapes = ['circle'];
-          break;
-      }
+        .social-icons {
+            display: flex;
+            align-items: center;
+        }
 
-      for (let i = 0; i < count; i++) {
-        particles.push(new Particle(
-          Math.random() * canvas.width,
-          Math.random() * canvas.height,
-          (Math.random() - 0.5) * vx,
-          Math.random() * vy,
-          Math.random() * size + 1,
-          color,
-          shapes[Math.floor(Math.random() * shapes.length)]
-        ));
-      }
-    }
+        .social-icons a {
+            color: #FFD700;
+            font-size: 1.3em;
+            margin-left: 15px;
+            transition: color 0.3s ease, transform 0.2s ease;
+        }
 
-    function animate() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((particle) => {
-        particle.update();
-        particle.draw();
-      });
-      requestAnimationFrame(animate);
-    }
+        .social-icons a:hover {
+            color: white;
+            transform: scale(1.1);
+        }
 
-    async function fetchWeather() {
-      const weatherElement = document.getElementById('weather');
-      const detailsElement = document.getElementById('details');
-      const aqiElement = document.getElementById('aqi');
-      const errorElement = document.getElementById('error');
-      const locationElement = document.getElementById('location');
+        /* Container Styling */
+        .container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 30px 40px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 5;
+        }
 
-      try {
-        if (!navigator.geolocation) throw new Error('Geolocation is not supported.');
+        .clock-title {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
 
-        navigator.geolocation.getCurrentPosition(async (position) => {
-          const { latitude, longitude } = position.coords;
+        .clock-time {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
 
-          const weatherURL = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${OPENWEATHER_API_KEY}`;
-          const aqiURL = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHER_API_KEY}`;
+        .weather, .details, #aqi, #location {
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
 
-          const [weatherResponse, aqiResponse] = await Promise.all([fetch(weatherURL), fetch(aqiURL)]);
-          if (!weatherResponse.ok) throw new Error('Weather API error');
-          if (!aqiResponse.ok) throw new Error('AQI API error');
+        .aqi-status {
+            font-weight: bold;
+            margin-top: 5px;
+        }
 
-          const weatherData = await weatherResponse.json();
-          const aqiData = await aqiResponse.json();
+        .error-message {
+            color: #ff6f61;
+            font-size: 1.2em;
+            margin-top: 15px;
+        }
 
-          const description = weatherData.weather[0].description;
-          const main = weatherData.main;
-          const aqi = aqiData.list[0].main.aqi;
+        /* Background Animations */
+        @keyframes sunnyGradient {
+            0%, 100% { background: linear-gradient(120deg, #FFD700, #FFA500, #FF6347); }
+            50% { background: linear-gradient(120deg, #FFDD44, #FFA500, #FF4500); }
+        }
 
-          // Display city name
-          locationElement.textContent = `Location: ${weatherData.name}`;
+        @keyframes cloudyGradient {
+            0%, 100% { background: linear-gradient(120deg, #b0c4de, #708090, #6a7a8a); }
+            50% { background: linear-gradient(120deg, #c0d4ee, #708090, #8a9aa0); }
+        }
 
-          weatherElement.textContent = `${description}, ${main.temp}°C`;
-          detailsElement.textContent = `Feels like: ${main.feels_like}°C, Humidity: ${main.humidity}%`;
-          aqiElement.textContent = `AQI: ${aqi}`;
+        @keyframes rainGradient {
+            0%, 100% { background: linear-gradient(120deg, #1e3c72, #2a5298, #1c5270); }
+            50% { background: linear-gradient(120deg, #1e3c72, #2a5298, #4a7298); }
+        }
 
-          initializeParticles(description);
-        });
-      } catch (error) {
-        console.error(error);
-        errorElement.textContent = 'Error fetching weather data!';
-      }
-    }
+        body.sunny { animation: sunnyGradient 6s infinite alternate ease-in-out; }
+        body.cloudy { animation: cloudyGradient 8s infinite alternate ease-in-out; }
+        body.rainy { animation: rainGradient 10s infinite alternate ease-in-out; }
 
-    function updateClock() {
-      const clockElement = document.getElementById('clock');
-      const date = new Date();
-      clockElement.textContent = date.toLocaleTimeString();
-    }
+        /* Footer */
+        .footer {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+        }
 
-    setInterval(updateClock, 1000);
-    fetchWeather();
-    animate();
-  </script>
+        /* Canvas Background */
+        #background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="navbar-left">Local Time Dashboard</div>
+        <div class="social-icons">
+            <a href="https://x.com/impk1103" target="_blank" title="Twitter"><i class="fab fa-twitter"></i></a>
+            <a href="https://www.instagram.com/pi_yus0/" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="https://www.linkedin.com/in/piyush-kumar-3b8a222b8/" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+        </div>
+    </div>
+
+    <canvas id="background"></canvas>
+
+    <div class="container">
+        <div class="clock-title">Local Time</div>
+        <div id="clock" class="clock-time">Loading...</div>
+        <div id="weather" class="weather">Fetching weather...</div>
+        <div id="details" class="details"></div>
+        <div id="location" class="location">Location: Fetching...</div>
+        <div id="aqi" class="details">Air Quality: Loading...</div>
+        <div class="aqi-status" id="aqi-status"></div>
+        <div id="error" class="error-message"></div>
+    </div>
+
+    <div class="footer">© 2024 Local Time Dashboard by Piyush Kumar</div>
+
+    <script>
+        const OPENWEATHER_API_KEY = 'db0c121614356f4aa6a99b992d44ff18';
+        const canvas = document.getElementById('background');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        class Particle {
+            constructor(x, y, vx, vy, size, color, shape) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.size = size;
+                this.color = color;
+                this.shape = shape;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                if (this.shape === 'circle') {
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                } else if (this.shape === 'square') {
+                    ctx.rect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+                } else if (this.shape === 'triangle') {
+                    ctx.moveTo(this.x, this.y - this.size);
+                    ctx.lineTo(this.x - this.size, this.y + this.size);
+                    ctx.lineTo(this.x + this.size, this.y + this.size);
+                    ctx.closePath();
+                }
+                ctx.fill();
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y > canvas.height) this.y = 0;
+            }
+        }
+
+        function getAQIStatus(aqi) {
+            switch (aqi) {
+                case 1: return { text: 'Good', color: 'green' };
+                case 2: return { text: 'Fair', color: 'yellow' };
+                case 3: return { text: 'Moderate', color: 'orange' };
+                case 4: return { text: 'Poor', color: 'red' };
+                case 5: return { text: 'Very Poor', color: 'darkred' };
+                default: return { text: 'Unknown', color: 'gray' };
+            }
+        }
+
+        function initializeParticles(weather) {
+            particles = [];
+            let count, color, vx, vy, size, shapes;
+            document.body.className = '';
+
+            switch (weather) {
+                case 'clear':
+                    document.body.classList.add('sunny');
+                    count = 50;
+                    color = '#FFD700';
+                    vx = 0.5;
+                    vy = 0.5;
+                    size = 2;
+                    shapes = ['circle', 'triangle'];
+                    break;
+                case 'cloudy':
+                    document.body.classList.add('cloudy');
+                    count = 100;
+                    color = '#B0C4DE';
+                    vx = 0.2;
+                    vy = 0.2;
+                    size = 3;
+                    shapes = ['circle', 'square'];
+                    break;
+                case 'rainy':
+                    document.body.classList.add('rainy');
+                    count = 150;
+                    color = '#87CEEB';
+                    vx = 0;
+                    vy = 2;
+                    size = 1;
+                    shapes = ['circle'];
+                    break;
+                default:
+                    document.body.classList.add('sunny');
+                    count = 50;
+                    color = '#FFD700';
+                    vx = 0.5;
+                    vy = 0.5;
+                    size = 2;
+                    shapes = ['circle'];
+            }
+
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height,
+                    (Math.random() - 0.5) * vx,
+                    Math.random() * vy,
+                    Math.random() * size + 1,
+                    color,
+                    shapes[Math.floor(Math.random() * shapes.length)]
+                ));
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((particle) => {
+                particle.update();
+                particle.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        async function fetchWeather() {
+            const weatherElement = document.getElementById('weather');
+            const detailsElement = document.getElementById('details');
+            const aqiElement = document.getElementById('aqi');
+            const aqiStatusElement = document.getElementById('aqi-status');
+            const errorElement = document.getElementById('error');
+            const locationElement = document.getElementById('location');
+
+            try {
+                if (!navigator.geolocation) throw new Error('Geolocation is not supported.');
+
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const { latitude, longitude } = position.coords;
+
+                    const weatherURL = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${OPENWEATHER_API_KEY}`;
+                    const aqiURL = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHER_API_KEY}`;
+
+                    const [weatherResponse, aqiResponse] = await Promise.all([fetch(weatherURL), fetch(aqiURL)]);
+                    
+                    if (!weatherResponse.ok) throw new Error('Weather data retrieval failed');
+                    if (!aqiResponse.ok) throw new Error('Air Quality data retrieval failed');
+
+                    const weatherData = await weatherResponse.json();
+                    const aqiData = await aqiResponse.json();
+
+                    const description = weatherData.weather[0].description;
+                    const main = weatherData.main;
+                    const aqi = aqiData.list[0].main.aqi;
+                    const aqiStatus = getAQIStatus(aqi);
+
+                    locationElement.textContent = `Location: ${weatherData.name}`;
+                    weatherElement.textContent = `${description.charAt(0).toUpperCase() + description.slice(1)}, ${main.temp}°C`;
+                    detailsElement.textContent = `Feels like: ${main.feels_like}°C, Humidity: ${main.humidity}%`;
+                    
+                    aqiElement.textContent = `Air Quality Index: ${aqi}`;
+                    aqiStatusElement.textContent = `Status: ${aqiStatus.text}`;
+                    aqiStatusElement.style.color = aqiStatus.color;
+
+                    initializeParticles(description.includes('rain') ? 'rainy' : (description.includes('cloud') ? 'cloudy' : 'clear'));
+                }, (error) => {
+                    console.error('Geolocation error:', error);
+                    errorElement.textContent = 'Unable to retrieve location. Please enable location services.';
+                });
+            } catch (error) {
+                console.error(error);
+                errorElement.textContent = 'Error fetching weather data. Please try again later.';
+            }
+        }
+
+        function updateClock() {
+            const clockElement = document.getElementById('clock');
+            const date = new Date();
+            clockElement.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        setInterval(updateClock, 1000);
+        fetchWeather();
+        animate();
+    </script>
 </body>
-
 </html>
