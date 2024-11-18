@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enhanced World Clock</title>
+  <title>World Clock and Weather</title>
   <style>
     /* General Reset */
     body, html {
@@ -16,10 +16,11 @@
       font-family: 'Arial', sans-serif;
       background: linear-gradient(120deg, #1e3c72, #2a5298);
       color: white;
+      text-align: center;
     }
 
-    /* Clock Styles */
-    .clock-container {
+    /* Container Styles */
+    .container {
       text-align: center;
       background: rgba(0, 0, 0, 0.5);
       padding: 20px 40px;
@@ -37,6 +38,11 @@
       font-weight: bold;
     }
 
+    .weather {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+
     .error-message {
       color: #ff6f61;
       font-size: 1em;
@@ -45,13 +51,16 @@
   </style>
 </head>
 <body>
-  <div class="clock-container">
+  <div class="container">
     <div class="clock-title">Your Local Time:</div>
     <div id="clock" class="clock-time">Loading...</div>
+    <div id="weather" class="weather">Fetching weather...</div>
     <div id="error" class="error-message"></div>
   </div>
 
   <script>
+    const OPENWEATHER_API_KEY = 'your_openweather_api_key'; // Replace with your OpenWeather API key
+
     /**
      * Fetch the time using the World Time API with retries.
      */
@@ -93,10 +102,44 @@
     }
 
     /**
-     * Initialize the clock with automatic updates every second.
+     * Fetch weather information using OpenWeatherMap API.
      */
-    function initializeClock() {
+    async function fetchWeather() {
+      const weatherElement = document.getElementById('weather');
+      const errorElement = document.getElementById('error');
+
+      try {
+        // Get user location via geolocation API
+        if (!navigator.geolocation) throw new Error('Geolocation is not supported.');
+
+        navigator.geolocation.getCurrentPosition(async (position) => {
+          const { latitude, longitude } = position.coords;
+          const weatherURL = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${OPENWEATHER_API_KEY}`;
+
+          const response = await fetch(weatherURL);
+          if (!response.ok) throw new Error('Weather API error');
+
+          const data = await response.json();
+          const { main, weather, name } = data;
+          const description = weather[0].description;
+          const temperature = main.temp;
+
+          weatherElement.textContent = `Weather in ${name}: ${description}, ${temperature}°C`;
+          errorElement.textContent = '';
+        });
+      } catch (error) {
+        weatherElement.textContent = 'Unable to fetch weather.';
+        errorElement.textContent = error.message;
+        console.error('Error fetching weather:', error);
+      }
+    }
+
+    /**
+     * Initialize the clock and weather data.
+     */
+    function initializePage() {
       fetchTimeWithRetries();
+      fetchWeather();
 
       // Update the time every second using local clock as fallback
       setInterval(() => {
@@ -110,8 +153,8 @@
       }, 1000);
     }
 
-    // Start the clock
-    initializeClock();
+    // Start fetching time and weather
+    initializePage();
   </script>
 </body>
 </html>
