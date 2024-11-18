@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cool Animation</title>
+  <title>Cool Animation with World Clock</title>
   <style>
     /* General Reset */
     body, html {
@@ -20,6 +20,7 @@
       background-size: 400% 400%;
       animation: gradientMove 10s infinite;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
     }
@@ -42,6 +43,17 @@
     @keyframes rotateText {
       0%, 100% { transform: rotate(0); }
       50% { transform: rotate(10deg); }
+    }
+
+    /* World Clock Display */
+    .clock {
+      margin-top: 20px;
+      font-size: 1.5em;
+      color: white;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
     }
 
     /* Pulsating Button */
@@ -75,8 +87,39 @@
 </head>
 <body>
   <div class="text">Cool Animated Page</div>
+  <div class="clock" id="clock">Loading your time...</div>
   <div class="button-container">
     <button class="button">Click Me</button>
   </div>
+
+  <script>
+    // Function to fetch time from World Time API
+    async function fetchTime() {
+      try {
+        const response = await fetch('https://worldtimeapi.org/api/ip');
+        const data = await response.json();
+        const timeString = new Date(data.datetime).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        });
+
+        const clockElement = document.getElementById('clock');
+        clockElement.textContent = `Your Local Time: ${timeString}`;
+
+        // Update time every second
+        setTimeout(fetchTime, 1000);
+      } catch (error) {
+        const clockElement = document.getElementById('clock');
+        clockElement.textContent = "Unable to fetch time.";
+        console.error('Error fetching time:', error);
+      }
+    }
+
+    // Start fetching the time
+    fetchTime();
+  </script>
 </body>
 </html>
+
