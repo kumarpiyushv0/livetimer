@@ -114,7 +114,7 @@
     <div id="error" class="error-message"></div>
   </div>
 
-  <div class="footer">Made by Piyush Kumar ©</div>
+  <div class="footer">© Made by Piyush Kumar</div>
 
   <!-- Audio element for weather sounds -->
   <audio id="weather-audio" loop></audio>
@@ -135,16 +135,16 @@
       // Apply class and audio based on the weather condition
       if (weatherCondition.includes('cloud')) {
         body.classList.add('cloudy');
-        audioElement.src = 'sounds/breeze.mp3'; // Breeze sound
+        audioElement.src = 'breeze.mp3'; // Breeze sound
       } else if (weatherCondition.includes('rain')) {
         body.classList.add('rainy');
-        audioElement.src = 'sounds/rain.mp3'; // Rain sound
+        audioElement.src = 'rain.mp3'; // Rain sound
       } else if (weatherCondition.includes('clear')) {
         body.classList.add('clear');
-        audioElement.src = 'sounds/birds.mp3'; // Birds chirping
+        audioElement.src = 'birds.mp3'; // Birds chirping
       } else {
         body.classList.add('sunny');
-        audioElement.src = 'sounds/birds.mp3'; // Default sunny weather sound
+        audioElement.src = 'birds.mp3'; // Default sunny weather sound
       }
 
       // Play sound if a valid source is set
