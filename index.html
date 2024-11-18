@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>World Clock and Weather</title>
+  <title>World Clock and Weather with AQI</title>
   <style>
     /* General Reset */
     body, html {
@@ -15,9 +15,34 @@
       font-family: 'Arial', sans-serif;
       color: white;
       text-align: center;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    /* Background Animation Layer */
+    /* Navbar Styling */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      z-index: 2;
+    }
+
+    .navbar .navbar-left {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #FFD700; /* Golden color to make it stand out */
+      letter-spacing: 1px;
+    }
+
+    /* Animated Background */
     #background {
       position: fixed;
       top: 0;
@@ -27,7 +52,7 @@
       z-index: -1;
     }
 
-    /* Container Styles */
+    /* Container Styling */
     .container {
       z-index: 1;
       text-align: center;
@@ -42,6 +67,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      transition: transform 1s ease-in-out;
     }
 
     .clock-title {
@@ -74,7 +100,28 @@
       margin-top: 15px;
     }
 
-    /* Footer Styles */
+    /* Background Animations for Different Weather */
+    @keyframes sunnyGradient {
+      0%, 100% { background: linear-gradient(120deg, #FFD700, #FFA500, #FF6347); }
+      50% { background: linear-gradient(120deg, #FFDD44, #FFA500, #FF4500); }
+    }
+
+    @keyframes cloudyGradient {
+      0%, 100% { background: linear-gradient(120deg, #b0c4de, #708090, #6a7a8a); }
+      50% { background: linear-gradient(120deg, #c0d4ee, #708090, #8a9aa0); }
+    }
+
+    @keyframes rainGradient {
+      0%, 100% { background: linear-gradient(120deg, #1e3c72, #2a5298, #1c5270); }
+      50% { background: linear-gradient(120deg, #1e3c72, #2a5298, #4a7298); }
+    }
+
+    /* Apply Animation Based on Weather */
+    body.sunny { animation: sunnyGradient 6s infinite alternate ease-in-out; }
+    body.cloudy { animation: cloudyGradient 8s infinite alternate ease-in-out; }
+    body.rainy { animation: rainGradient 10s infinite alternate ease-in-out; }
+
+    /* Footer */
     .footer {
       position: absolute;
       bottom: 10px;
@@ -87,12 +134,18 @@
 </head>
 
 <body>
+  <!-- Navbar -->
+  <div class="navbar">
+    <div class="navbar-left">Live Clock</div>
+  </div>
+
   <canvas id="background"></canvas>
   <div class="container">
     <div class="clock-title">Local Time:</div>
     <div id="clock" class="clock-time">Loading...</div>
     <div id="weather" class="weather">Fetching weather...</div>
     <div id="details" class="details"></div>
+    <div id="aqi" class="details">AQI: Loading...</div>
     <div id="error" class="error-message"></div>
   </div>
   <div class="footer">© Made by Piyush Kumar</div>
@@ -107,21 +160,30 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    /** Particle class for creating animated weather effects */
     class Particle {
-      constructor(x, y, vx, vy, radius, color) {
+      constructor(x, y, vx, vy, size, color, shape) {
         this.x = x;
         this.y = y;
         this.vx = vx;
         this.vy = vy;
-        this.radius = radius;
+        this.size = size;
         this.color = color;
+        this.shape = shape;
       }
 
       draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = this.color;
+        ctx.beginPath();
+        if (this.shape === 'circle') {
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        } else if (this.shape === 'square') {
+          ctx.rect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+        } else if (this.shape === 'triangle') {
+          ctx.moveTo(this.x, this.y - this.size);
+          ctx.lineTo(this.x - this.size, this.y + this.size);
+          ctx.lineTo(this.x + this.size, this.y + this.size);
+          ctx.closePath();
+        }
         ctx.fill();
       }
 
@@ -134,38 +196,47 @@
       }
     }
 
-    /** Initialize particles based on weather */
     function initializeParticles(weather) {
       particles = [];
-      let count, color, vx, vy, radius;
+      let count, color, vx, vy, size, shapes;
+      document.body.className = '';
 
       switch (weather) {
         case 'clear':
+          document.body.classList.add('sunny');
           count = 50;
-          color = '#FFD700'; // Golden particles
+          color = '#FFD700';
           vx = 0.5;
           vy = 0.5;
-          radius = 2;
-          document.body.style.background = 'linear-gradient(120deg, #87ceeb, #4682b4)'; // Clear sky
+          size = 2;
+          shapes = ['circle', 'triangle'];
           break;
         case 'cloudy':
+          document.body.classList.add('cloudy');
           count = 100;
-          color = '#B0C4DE'; // Light gray particles
+          color = '#B0C4DE';
           vx = 0.2;
           vy = 0.2;
-          radius = 3;
-          document.body.style.background = 'linear-gradient(120deg, #b0c4de, #708090)'; // Cloudy sky
+          size = 3;
+          shapes = ['circle', 'square'];
           break;
         case 'rainy':
+          document.body.classList.add('rainy');
           count = 150;
-          color = '#87CEEB'; // Light blue raindrops
+          color = '#87CEEB';
           vx = 0;
           vy = 2;
-          radius = 1;
-          document.body.style.background = 'linear-gradient(120deg, #1e3c72, #2a5298)'; // Rainy sky
+          size = 1;
+          shapes = ['circle'];
           break;
         default:
-          document.body.style.background = 'linear-gradient(120deg, #ffdd00, #ff7e00)'; // Default sunny
+          document.body.classList.add('sunny');
+          count = 50;
+          color = '#FFD700';
+          vx = 0.5;
+          vy = 0.5;
+          size = 2;
+          shapes = ['circle'];
           break;
       }
 
@@ -175,13 +246,13 @@
           Math.random() * canvas.height,
           (Math.random() - 0.5) * vx,
           Math.random() * vy,
-          Math.random() * radius + 1,
-          color
+          Math.random() * size + 1,
+          color,
+          shapes[Math.floor(Math.random() * shapes.length)]
         ));
       }
     }
 
-    /** Animation loop for the background */
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       particles.forEach((particle) => {
@@ -191,10 +262,10 @@
       requestAnimationFrame(animate);
     }
 
-    /** Fetch weather information */
     async function fetchWeather() {
       const weatherElement = document.getElementById('weather');
       const detailsElement = document.getElementById('details');
+      const aqiElement = document.getElementById('aqi');
       const errorElement = document.getElementById('error');
 
       try {
@@ -203,28 +274,25 @@
         navigator.geolocation.getCurrentPosition(async (position) => {
           const { latitude, longitude } = position.coords;
 
-          // Fetch weather details
           const weatherURL = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${OPENWEATHER_API_KEY}`;
-          const response = await fetch(weatherURL);
+          const aqiURL = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHER_API_KEY}`;
 
-          if (!response.ok) throw new Error('Weather API error');
-          const data = await response.json();
+          const [weatherResponse, aqiResponse] = await Promise.all([fetch(weatherURL), fetch(aqiURL)]);
+          if (!weatherResponse.ok) throw new Error('Weather API error');
+          if (!aqiResponse.ok) throw new Error('AQI API error');
 
-          const description = data.weather[0].description;
-          const main = data.main;
+          const weatherData = await weatherResponse.json();
+          const aqiData = await aqiResponse.json();
+
+          const description = weatherData.weather[0].description;
+          const main = weatherData.main;
+          const aqi = aqiData.list[0].main.aqi;
 
           weatherElement.textContent = `${description}, ${main.temp}°C`;
-          detailsElement.textContent = `Feels like: ${main.feels_like}°C, Humidity: ${main.humidity}%, AQI: Moderate`;
+          detailsElement.textContent = `Feels like: ${main.feels_like}°C, Humidity: ${main.humidity}%`;
+          aqiElement.textContent = `AQI: ${['Good', 'Fair', 'Moderate', 'Poor', 'Very Poor'][aqi - 1]}`;
 
-          // Update background and particles
-          if (description.includes('rain')) {
-            currentWeather = 'rainy';
-          } else if (description.includes('cloud')) {
-            currentWeather = 'cloudy';
-          } else {
-            currentWeather = 'clear';
-          }
-
+          currentWeather = description.includes('rain') ? 'rainy' : description.includes('cloud') ? 'cloudy' : 'clear';
           initializeParticles(currentWeather);
         });
       } catch (error) {
@@ -233,7 +301,6 @@
       }
     }
 
-    /** Fetch time */
     function fetchTime() {
       const clockElement = document.getElementById('clock');
       setInterval(() => {
@@ -247,7 +314,6 @@
       }, 1000);
     }
 
-    /** Initialize app */
     function initialize() {
       fetchTime();
       fetchWeather();
