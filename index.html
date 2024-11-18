@@ -10,93 +10,93 @@
       margin: 0;
       padding: 0;
       height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      overflow: hidden;
       font-family: 'Arial', sans-serif;
       color: white;
       text-align: center;
-      overflow: hidden;
     }
 
     /* Dynamic Background */
-    body.sunny {
-      background: linear-gradient(120deg, #ffdd00, #ff7e00);
-      animation: sunnyAnimation 8s infinite alternate;
-    }
-
-    body.cloudy {
-      background: linear-gradient(120deg, #b0c4de, #708090);
-      animation: cloudyAnimation 8s infinite alternate;
-    }
-
-    body.rainy {
+    body {
       background: linear-gradient(120deg, #1e3c72, #2a5298);
-      animation: rainyAnimation 8s infinite alternate;
+      transition: background 0.5s ease;
     }
 
-    body.clear {
-      background: linear-gradient(120deg, #87ceeb, #4682b4);
-      animation: clearAnimation 8s infinite alternate;
+    /* Weather-based Background Layers */
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 300%;
+      height: 300%;
+      pointer-events: none;
+      background-size: 50% 50%;
+      transition: opacity 0.5s ease;
     }
 
-    /* Animation Keyframes */
-    @keyframes sunnyAnimation {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 100% 50%; }
+    .background.sunny {
+      background-image: radial-gradient(circle, #ffd700, transparent 60%);
+      opacity: 1;
     }
 
-    @keyframes cloudyAnimation {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 100% 50%; }
+    .background.cloudy {
+      background-image: radial-gradient(circle, #c0c0c0, transparent 70%);
+      opacity: 1;
     }
 
-    @keyframes rainyAnimation {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 100% 50%; }
+    .background.rainy {
+      background-image: radial-gradient(circle, #00008b, transparent 70%);
+      opacity: 1;
     }
 
-    @keyframes clearAnimation {
-      0% { background-position: 0% 50%; }
-      100% { background-position: 100% 50%; }
+    .background.clear {
+      background-image: radial-gradient(circle, #87cefa, transparent 60%);
+      opacity: 1;
+    }
+
+    /* Parallax Effect */
+    .background-layer {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: inherit;
+      will-change: transform;
     }
 
     /* Container Styles */
     .container {
+      position: relative;
+      z-index: 10;
       text-align: center;
       background: rgba(0, 0, 0, 0.5);
       padding: 30px 50px;
       border-radius: 20px;
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-      animation: fadeIn 2s ease-out;
     }
 
     .clock-title {
-      font-size: 2.5em;
+      font-size: 3em;
       margin-bottom: 20px;
       font-weight: bold;
       text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-      animation: slideIn 1.5s ease-out;
     }
 
     .clock-time {
-      font-size: 4em;
+      font-size: 4.5em;
       font-weight: bold;
       text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
-      animation: pulse 1.5s infinite;
     }
 
     .weather {
       margin-top: 30px;
-      font-size: 2em;
+      font-size: 2.5em;
       font-weight: 600;
-      animation: zoomIn 1.2s ease-out;
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
     }
 
     .error-message {
       color: #ff6f61;
-      font-size: 1.2em;
+      font-size: 1.5em;
       margin-top: 15px;
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
     }
@@ -106,36 +106,21 @@
       position: absolute;
       bottom: 10px;
       right: 20px;
-      font-size: 1em;
+      font-size: 1.2em;
       color: white;
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
       font-weight: bold;
-    }
-
-    /* Animations for Content */
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes slideIn {
-      from { transform: translateX(-100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); color: white; }
-      50% { transform: scale(1.1); color: #ffeb3b; }
-      100% { transform: scale(1); color: white; }
-    }
-
-    @keyframes zoomIn {
-      from { transform: scale(0.5); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
+      z-index: 10;
     }
   </style>
 </head>
 <body>
+  <div class="background">
+    <div class="background-layer"></div>
+    <div class="background-layer"></div>
+    <div class="background-layer"></div>
+  </div>
+
   <div class="container">
     <div class="clock-title">Your Local Time:</div>
     <div id="clock" class="clock-time">Loading...</div>
@@ -149,24 +134,20 @@
     const OPENWEATHER_API_KEY = 'db0c121614356f4aa6a99b992d44ff18'; // Replace with your OpenWeather API key
 
     /**
-     * Update body background based on weather conditions.
-     * @param {string} weatherCondition 
+     * Update body background and animation based on weather conditions.
      */
     function updateBackground(weatherCondition) {
-      const body = document.body;
+      const background = document.querySelector('.background');
+      background.className = 'background'; // Reset classes
 
-      // Remove existing weather classes
-      body.classList.remove('sunny', 'cloudy', 'rainy', 'clear');
-
-      // Add class based on weather condition
       if (weatherCondition.includes('cloud')) {
-        body.classList.add('cloudy');
+        background.classList.add('cloudy');
       } else if (weatherCondition.includes('rain')) {
-        body.classList.add('rainy');
+        background.classList.add('rainy');
       } else if (weatherCondition.includes('clear')) {
-        body.classList.add('clear');
+        background.classList.add('clear');
       } else {
-        body.classList.add('sunny');
+        background.classList.add('sunny');
       }
     }
 
@@ -244,13 +225,28 @@
     }
 
     /**
+     * Parallax Effect for Mouse Movement
+     */
+    document.addEventListener('mousemove', (e) => {
+      const layers = document.querySelectorAll('.background-layer');
+      const { clientX, clientY } = e;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      layers.forEach((layer, index) => {
+        const offsetX = ((clientX / width) - 0.5) * (10 + index * 10);
+        const offsetY = ((clientY / height) - 0.5) * (10 + index * 10);
+        layer.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+      });
+    });
+
+    /**
      * Initialize the clock and weather data.
      */
     function initializePage() {
       fetchTimeWithRetries();
       fetchWeather();
 
-      // Update the time every second using local clock as fallback
       setInterval(() => {
         const clockElement = document.getElementById('clock');
         clockElement.textContent = new Date().toLocaleTimeString([], {
@@ -262,7 +258,6 @@
       }, 1000);
     }
 
-    // Start fetching time and weather
     initializePage();
   </script>
 </body>
