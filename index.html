@@ -168,7 +168,7 @@
         <div id="error" class="error-message"></div>
     </div>
 
-    <div class="footer">© 2024 Local Time Dashboard by Piyush Kumar</div>
+    <div class="footer">© 2024 Created by Piyush Kumar</div>
 
     <script>
         const OPENWEATHER_API_KEY = 'db0c121614356f4aa6a99b992d44ff18';
@@ -324,8 +324,7 @@
                     locationElement.textContent = `Location: ${weatherData.name}`;
                     weatherElement.textContent = `${description.charAt(0).toUpperCase() + description.slice(1)}, ${main.temp}°C`;
                     detailsElement.textContent = `Feels like: ${main.feels_like}°C, Humidity: ${main.humidity}%`;
-                    detailsElement.textContent = `Air Quality: `; aqiStatusElement.textContent = `${aqiStatus.text}`;
-                    aqiStatusElement.style.color = aqiStatus.color;
+                    aqiStatusElement.textContent = `Air Quality: ${aqiStatus.text}`;
 
                     initializeParticles(description.includes('rain') ? 'rainy' : (description.includes('cloud') ? 'cloudy' : 'clear'));
                 }, (error) => {
