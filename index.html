@@ -326,8 +326,7 @@
                     weatherElement.textContent = `${description.charAt(0).toUpperCase() + description.slice(1)}, ${main.temp}°C`;
                     detailsElement.textContent = `Feels like: ${main.feels_like}°C, Humidity: ${main.humidity}%`;
                     
-                    aqiElement.textContent = `Air Quality Index: ${aqi}`;
-                    aqiStatusElement.textContent = `Status: ${aqiStatus.text}`;
+                    aqiStatusElement.textContent = `Air Quality Index: ${aqiStatus.text}`;
                     aqiStatusElement.style.color = aqiStatus.color;
 
                     initializeParticles(description.includes('rain') ? 'rainy' : (description.includes('cloud') ? 'cloudy' : 'clear'));
