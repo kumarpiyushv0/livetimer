@@ -59,7 +59,7 @@
   </div>
 
   <script>
-    const OPENWEATHER_API_KEY = 'db0c121614356f4aa6a99b992d44ff18' ; // Replace with your OpenWeather API key
+    const OPENWEATHER_API_KEY = 'db0c121614356f4aa6a99b992d44ff18'; // Replace with your OpenWeather API key
 
     /**
      * Fetch the time using the World Time API with retries.
@@ -95,7 +95,7 @@
               second: '2-digit',
               hour12: true,
             });
-            // errorElement.textContent = 'Unable to fetch time from the server. Fallback time shown.';
+            errorElement.textContent = 'Unable to fetch time from the server. Fallback time shown.';
           }
         }
       }
@@ -126,6 +126,10 @@
 
           weatherElement.textContent = `Weather in ${name}: ${description}, ${temperature}°C`;
           errorElement.textContent = '';
+        }, (geolocationError) => {
+          weatherElement.textContent = 'Unable to get location.';
+          errorElement.textContent = geolocationError.message;
+          console.error('Geolocation error:', geolocationError);
         });
       } catch (error) {
         weatherElement.textContent = 'Unable to fetch weather.';
